@@ -1,0 +1,7 @@
+env
+.idea/*
+browser_data.json
+cookie.json
+*.txt
+*.csv
+voz/
