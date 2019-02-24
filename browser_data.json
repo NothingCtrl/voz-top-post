@@ -1,0 +1,8 @@
+{
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36",
+  "upgrade-insecure-requests": "1",
+  "referer": "https://forums.voz.vn/index.php",
+  "accept-language": "en-US,en;q=0.9,vi;q=0.8,fr-FR;q=0.7,fr;q=0.6",
+  "accept-encoding": "gzip, deflate, br",
+  "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
+}
