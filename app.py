@@ -113,6 +113,10 @@ class Voz:
                             title = a.text
                         if a.text == 'Last Page':
                             last_page_url = a.attrib.get('href')
+                            break
+                        elif 'showthread.php?t=' in a.attrib.get('href'):
+                            last_page_url = a.attrib.get('href')
+
                     if title and thread_url and len(title.strip()) > 0:
                         result.append({
                             'title': title,
@@ -148,37 +152,108 @@ class Voz:
                 hit_count = "<td>Hit: {}</td>".format(th['hit_count'])
             last_page = ''
             if 'last_page_url' in th and th['last_page_url']:
-                last_page = " <a href='{}' target='_blank'>[Last Page]</a>".format(th['last_page_url'])
-            text += u'<tr>' \
-                    '<td style="width: 75%"><a href="{}#{}" target=\'_blank\'>[{}/{}] {}</a> <a href="#{}_{}" onclick="toggle_visibility(\'first-{}\')"><strong>[Show/Hide]</strong></a>{} (author: {})<div id="first-{}" style="background: white; display: none" class="toggle-content"><br>{}</td>' \
+                last_page = " <a href='{}#{}' target='_blank'>[Last Page]</a>".format(th['last_page_url'], date_create)
+            text += u'<tr id={}>' \
+                    '<td style="width: 70%;"><a href="{}#{}" target=\'_blank\'>[{}/{}] {}</a> <a href="#{}_{}" onclick="toggle_visibility(\'first-{}\')"><strong>[Show/Hide]</strong></a>{} (author: {}) <span onclick="deleteRow(\'{}\')" style="font-size: 9px; cursor: pointer; color: gray">delete</span><div id="first-{}" style="background: #efefef; display: none" class="toggle-content"><br>{}</div></td>' \
                     '<td>Views: {:,}</td>' \
                     '<td>Replies: {:,}</td>' \
                     '<td>Forum: {}</td>' \
-                    '{}</tr>'.format(th['url'], date_create, count, total, th['title'], th['id'], date_create, th['id'], last_page, th['author'], th['id'], first_post, th['views'], th['replies'], th['forum'], hit_count)
-        html = u"""<html><head><meta charset="UTF-8"><title>VOZ TOP New Post | %s</title> <style type="text/css">table {border-collapse: collapse;} table, th, td {border: 1px solid #a1a1a1; font-family: Arial,serif; font-size: 14px;} tr:hover {background-color: #f5f5f5;} td {height: 25px;} a {text-decoration: none;} body {background: #c7c7c7}</style> </head><body><table><tbody>%s</tbody></table><script type="text/javascript">
-        function toggle_visibility(id) {
+                    '{}</tr>'.format(th['id'], th['url'], date_create, count, total, th['title'], th['id'], date_create, th['id'], last_page, th['author'], th['id'], th['id'], first_post, th['views'], th['replies'], th['forum'], hit_count)
+        html = u"""<html><head><meta charset="UTF-8"><title>VOZ | %s</title> 
+        <!-- Suppress browser request for favicon.ico -->
+        <link rel="shortcut icon"type="image/x-icon" href="data:image/x-icon;,">
+        <style type="text/css">table {border-collapse: collapse;} table, th, td {border: 1px solid #a1a1a1; font-family: Arial,serif; font-size: 14px;} td {height: 32px;} a {text-decoration: none;} body {background: #e0dbdb}
+        tbody tr:nth-child(odd){ background-color: #cecece;}
+        tr:hover {background-color: #ffffff !important;} 
+        </style>
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script> 
+        </head><body><div style="font-family: Arial,serif; font-size: 14px; padding-bottom: 10px"><a href="../">Home</a> | <input type="checkbox" name="auto_toggle" value="1" id="auto_toggle"> Auto toggle content | <input type="checkbox" name="hide_deleted" value="1" id="hide_deleted"> Hide deleted thread(s) (<span style="cursor: pointer;" onclick="clearDeletedThread()">clear list</span>)</div><table style="width: 98%%"><tbody>%s</tbody></table>
+<script type="text/javascript">
+    var favIcon = "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAATlBMVEUAAAAkRXkiSXsiSXsjSXwjSH0jSXwjSXwjSXwiSXwjSXwiSXwlS3UbTWUjSH0jSXwiSX0iSHwjSXwiSXslRX4jSXwjSXwiSXojSXwAAAB5V3sJAAAAGHRSTlMAElp0mbHX8r2kik4JA0P4ZDfgfhroyigwxk/FAAAAAWJLR0QAiAUdSAAAAAd0SU1FB+MCGAA3AVRpfz4AAAHTSURBVEjHlZbbtqsgDEXBCgiIYmnV///S03IpSUD3OLypuayZRCNj9PDhMQqplJy0sTP747hFryc4q/D8zn57ns1R4S7NK3Rc3t7dibJT67K/bkEO826SbNTIoqxzoB7rgO0XcsM1OU5ksKlzwhFM47ACVcc33oHL1SlWJd+/1wan6NWqcA4pAC62jU2TyMPnkjw7VBn7QKPyTj0vJSTYIeuEzQ8xgSqXHewYszZf8SL27GALoPMQlUJTiQh7L5VPJgIqarCfUOeeujcDRTUcxB7zhU8mlqExI9jfiqqsMysxbIQOI04hQLeyocYjoDD2AnVuuVnd5pcTsdOUulRYyRRyINiPqjPPuyIOBJuvpb2+iCaSKLbOOpcygpLOfQ9bsuOnYwKT0cWOAmydV928vD1scAwajbNWEWGDY9lM7nSxf+czfEwQB4K9oYcCVPgC2zfPOGkdxl6Q4thD1nxH4ScORwtp0ul3tGJzPAflHaYUa9lSjoxBoXP7BTaZgt+nkr2IKAneaSAIrKGNdC9iD0QoGgHyUHeCkBU04PXM084Ad4j9JyAyeNCCNkvxQw5rJXFB+2vX+XYTpvCXi30OqjW//3XgXvzXz0lMY42ern9//gFSuXGcmVXZKwAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAxOS0wMi0yNFQwNjo1NTowMS0wNjowMMJ1yBAAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMTktMDItMjRUMDY6NTU6MDEtMDY6MDCzKHCsAAAAAElFTkSuQmCC";    
+    var docHead = document.getElementsByTagName('head')[0];       
+    var newLink = document.createElement('link');
+    newLink.rel = 'shortcut icon';
+    newLink.href = 'data:image/png;base64,'+favIcon;
+    docHead.appendChild(newLink);    
+    function toggle_visibility(id) {
     	var e = document.getElementById(id);
     	if (e.style.display == 'block') {
        		e.style.display = 'none';
     	} else {
 			e.style.display = 'block';
 			var toggle_class = document.getElementsByClassName('toggle-content');
-			for (var i = 0; i < toggle_class.length; i++) {
-			    if (id != toggle_class.item(i).id) {
-			        toggle_class.item(i).style.display = 'none';
-				}
-			}			
-			e.scrollIntoView();
+			var toggle_option = document.getElementById('auto_toggle');
+            if (toggle_option.checked) {
+                for (var i = 0; i < toggle_class.length; i++) {
+                    if (id != toggle_class.item(i).id) {
+                        toggle_class.item(i).style.display = 'none';
+                    }
+                }			
+                e.scrollIntoView();
+            }
     	}
 	}
+	
+	function deleteRow(id) {
+	    $('#' + id).hide();
+	    saveDeleteThread(id);
+	}
+	
+	// Retrieve your data from locaStorage
+    var saveData = JSON.parse(localStorage.saveData || null) || {};
+    console.log(saveData);
+    
+    // Store your data.
+    function saveDeleteThread(thread_id) {
+        var deletedThreads = loadDeletedThreads();
+        if (!deletedThreads.includes(thread_id)) {
+            deletedThreads.push(thread_id);
+			saveData.deleteThread = deletedThreads;
+			localStorage.saveData = JSON.stringify(saveData);
+			console.log("Add id: " + thread_id + " to deleted thread list")
+		}
+    }
+    
+    // load deleted thread
+    function loadDeletedThreads() {
+        return saveData.deleteThread || [];       
+    }
+    
+    $('#hide_deleted').change(function () {
+		if ($('#hide_deleted').is(':checked')) {
+		    for (var i = 0; i < saveData.deleteThread.length; i++) {
+		        $('#' + saveData.deleteThread[i]).hide();
+			}
+		} else {
+		    for (var i = 0; i < saveData.deleteThread.length; i++) {
+		        $('#' + saveData.deleteThread[i]).show();
+			}
+		}
+    });
+    
+    function clearDeletedThread() {
+        saveData.deleteThread = [];
+        localStorage.saveData = JSON.stringify(saveData);
+        alert('Cleared!')
+    }
+	
 </script></body></html>""" % (date_create, text)
-        store_dir = "{}\\voz".format(self.dir_path)
+        if os.name == 'nt':
+            store_dir = "{}\\voz".format(self.dir_path)
+            if not page_title:
+                file = "{}\\voz_new_post_top_{}.html".format(store_dir, date_create)
+            else:
+                file = "{}\\{}.html".format(store_dir, page_title)
+        else:
+            store_dir = "{}/voz".format(self.dir_path)
+            if not page_title:
+                file = "{}/voz_new_post_top_{}.html".format(store_dir, date_create)
+            else:
+                file = "{}/{}.html".format(store_dir, page_title)
+
         if not os.path.isdir(store_dir):
             os.mkdir(store_dir)
-        if not page_title:
-            file = "{}\\voz_new_post_top_{}.html".format(store_dir, date_create)
-        else:
-            file = "{}\\{}.html".format(store_dir, page_title)
+
         if not os.path.isfile(file):
             with open(file, 'wb') as writer:
                 writer.write(html.encode("UTF-8"))
@@ -218,7 +293,9 @@ class Voz:
                     if not strip_html:
                         div_content = PyQuery(tr.html())('div.voz-post-message')
                         html = div_content.html().replace('<img src=', '<img style="max-width: 850;" src=')
-                        return html.replace('/redirect/index.php?link=', '')
+                        html = html.replace('src="/images/', 'src="{}/images/'.format(self.base_url))
+                        html = html.replace('src="images/', 'src="{}/images/'.format(self.base_url))
+                        return html.replace('/redirect/index.php?link=', '{}/redirect/index.php?link='.format(self.base_url))
                     else:
                         text = re.sub('<[^<]+?>', '', tr.text()).replace('"', '')
                         return re.sub(r'\n\s*\n', '\n\n', text)
@@ -302,7 +379,10 @@ class Voz:
                     file_path = self._threads_to_html(threads=top_threads)
                     print("File report created")
                     if open_result_page:
-                        os.system("start " + file_path)     # work on Windows env
+                        if os.name == 'nt':
+                            os.system("start " + file_path)  # work on Windows env
+                        else:
+                            os.system("open " + file_path)
         else:
             if rs.status_code == 499:
                 print("Server timeout!")
@@ -323,13 +403,13 @@ class Voz:
 
 
 if __name__ == '__main__':
-    voz = Voz()
-    voz.get_new_post()
-    # while 1:
-    #     voz = Voz()
-    #     now = datetime.datetime.now()
-    #     if not now.minute % 45:     # check every 45 min
-    #         voz.get_new_post(open_result_page=False)
-    #     if now.hour == 23 and now.minute == 55:
-    #         voz.get_day_top_hit()
-    #     time.sleep(30)
+    # voz = Voz()
+    # voz.get_new_post(open_result_page=False)
+    while 1:
+        voz = Voz()
+        now = datetime.datetime.now()
+        if not now.minute % 45:     # check every 45 min
+            voz.get_new_post(open_result_page=False)
+        if now.hour == 23 and now.minute == 55:
+            voz.get_day_top_hit()
+        time.sleep(30)
