@@ -408,7 +408,7 @@ if __name__ == '__main__':
     while 1:
         voz = Voz()
         now = datetime.datetime.now()
-        if not now.minute % 45:     # check every 45 min
+        if not now.minute % 45 and now.minute != 0:     # check every 45 min
             voz.get_new_post(open_result_page=False)
         if now.hour == 23 and now.minute == 55:
             voz.get_day_top_hit()
